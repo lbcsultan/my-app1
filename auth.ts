@@ -20,6 +20,16 @@ type UserDocLike = {
   role?: 'user' | 'admin'
 }
 
+function assertAuthSecret(): string {
+  const secret = process.env.AUTH_SECRET
+  if (!secret) {
+    throw new Error('AUTH_SECRET 환경변수가 없습니다.')
+  }
+  return secret
+}
+
+const authSecret = assertAuthSecret()
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -38,7 +48,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!email || !password) return null
 
         await connectDB()
-        const user = await User.findOne({ email: email.toLowerCase() })
+        const user = await User.findOne({
+          email: email.toLowerCase(),
+        }).lean<UserDocLike>()
 
         if (!user) return null
 
@@ -54,6 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  secret: authSecret,
   session: {
     strategy: 'jwt',
   },

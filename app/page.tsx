@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { Counter } from '@/components/Counter'
 
 // app/page.tsx는 "/" 경로를 담당합니다 (File-based Routing).
