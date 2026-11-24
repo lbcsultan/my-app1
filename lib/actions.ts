@@ -19,6 +19,7 @@ import { createNotice, deleteNotice, getNotice } from '@/lib/notices'
 import { createUser } from '@/lib/users'
 import { signIn, signOut, auth } from '@/auth'
 import { createOrder } from './orders'
+import { checkLoginRateLimit } from './rateLimit'
 
 // 10주차부터 상품 목록/상세 페이지는 "좋아요" 대신 실제 장바구니 담기를
 // 지원합니다. 폼에서 넘어온 수량(qty)을 그대로 믿지 않고, 실제 재고를
@@ -214,6 +215,15 @@ export async function registerAction(formData: FormData) {
 // (Next.js의 리다이렉트 신호 포함)는 그대로 다시 던져야 합니다 — 여기서
 // 삼켜버리면 로그인 성공 후 리다이렉트까지 막혀버립니다.
 export async function loginAction(formData: FormData) {
+  const email =
+    typeof formData.get('email') === 'string'
+      ? String(formData.get('email'))
+      : ''
+  const { allowed, retryAfterSeconds } = checkLoginRateLimit(email)
+  if (!allowed) {
+    redirect(`/login?error=ratelimited&retry=${retryAfterSeconds}`)
+  }
+
   try {
     await signIn('credentials', formData)
   } catch (error) {
